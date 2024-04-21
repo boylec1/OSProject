@@ -103,21 +103,35 @@ e1000_transmit(struct mbuf *m)
   // a pointer so that it can be freed after sending.
   //
 
-  // Ask the E1000 for the TX ring index at which it's expecting the next packet
-  uint64 tx_ring_index = E1000_TDT;
+  // Index location of TDT, the tail end of the ring
+  uint32 tx_ring_index = regs[E1000_TDT];
 
-  if(regs[tx_ring_index] != E1000_TXD_STAT_DD)
+  // Creating a pointer to the current descriptor at the index of TDT tail location
+  struct tx_desc *descriptor = &tx_ring[tx_ring_index];
+  
+  // Checking if E1000_TXD_STAT_DD (descriptor done) is set in the descriptor
+  // If not, return -1, otherwise free the last mbuf
+  if(descriptor->status != E1000_TXD_STAT_DD)
     return -1;
   else {
     mbuffree(m);
   }
 
+  // Filling in descriptor head and length
+  descriptor->addr = (uint64)m->head;
+  descriptor->length = m->len;
+
   // Set cmd flags
-  regs[tx_ring_index] |= (E1000_TXD_CMD_RS | E1000_TXD_CMD_EOP);
+  descriptor->cmd |= (E1000_TXD_CMD_RS | E1000_TXD_CMD_EOP);
 
-  // Save pointer to mbuf
-  struct mbuf *last_mbuf = m;
+  // Save given mbuf for potential future use
+  tx_mbufs[tx_ring_index] = m;
 
+  // Updating ring position by adding one to E1000_TDT mod TX_RING_SIZE
+  // Since regs[E1000_TDT] is actually the index position, we set that
+  regs[E1000_TDT] = (E1000_TDT + 1) % TX_RING_SIZE;
+
+  // Test print statement
   printf("test test transmit!");
   
   return 0;
@@ -126,7 +140,7 @@ e1000_transmit(struct mbuf *m)
 static void
 e1000_recv(void)
 {
-  struct mbuf *m;
+  //struct mbuf *m;
   //
   // Your code here.
   //
@@ -134,7 +148,7 @@ e1000_recv(void)
   // Create and deliver an mbuf for each packet (using net_rx()).
   //
 
-  net_rx(m);
+  //net_rx(m);
   printf("test test receiving");
 }
 
