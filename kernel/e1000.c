@@ -102,6 +102,22 @@ e1000_transmit(struct mbuf *m)
   // the TX descriptor ring so that the e1000 sends it. Stash
   // a pointer so that it can be freed after sending.
   //
+
+  // Ask the E1000 for the TX ring index at which it's expecting the next packet
+  uint64 tx_ring_index = E1000_TDT;
+
+  if(regs[tx_ring_index] != E1000_TXD_STAT_DD)
+    return -1;
+  else {
+    mbuffree(m);
+  }
+
+  // Set cmd flags
+  regs[tx_ring_index] |= (E1000_TXD_CMD_RS | E1000_TXD_CMD_EOP);
+
+  // Save pointer to mbuf
+  struct mbuf *last_mbuf = m;
+
   printf("test test transmit!");
   
   return 0;
@@ -110,12 +126,15 @@ e1000_transmit(struct mbuf *m)
 static void
 e1000_recv(void)
 {
+  struct mbuf *m;
   //
   // Your code here.
   //
   // Check for packets that have arrived from the e1000
   // Create and deliver an mbuf for each packet (using net_rx()).
   //
+
+  net_rx(m);
   printf("test test receiving");
 }
 
