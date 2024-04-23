@@ -102,7 +102,7 @@ e1000_transmit(struct mbuf *m)
   // the TX descriptor ring so that the e1000 sends it. Stash
   // a pointer so that it can be freed after sending.
   //
-
+  acquire(&e1000_lock);
   // Index location of TDT, the tail end of the ring
   uint32 tx_ring_index = regs[E1000_TDT];
 
@@ -134,22 +134,27 @@ e1000_transmit(struct mbuf *m)
   // Test print statement
   printf("test test transmit!");
   
+  release(&e1000_lock);
   return 0;
 }
 
 static void
 e1000_recv(void)
-{
-  //struct mbuf *m;
+{ 
   //
   // Your code here.
   //
   // Check for packets that have arrived from the e1000
   // Create and deliver an mbuf for each packet (using net_rx()).
   //
+  acquire(&e1000_lock);
 
-  //net_rx(m);
+  // add ring position
+  // think index above, but for the receive descriptor (I think)
+  // per lab spec, this is (RDT + 1) % RX_RING_SIZE
+  
   printf("test test receiving");
+  release(&e1000_lock);  
 }
 
 void
