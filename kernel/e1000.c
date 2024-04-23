@@ -152,6 +152,17 @@ e1000_recv(void)
   // add ring position
   // think index above, but for the receive descriptor (I think)
   // per lab spec, this is (RDT + 1) % RX_RING_SIZE
+  uint32 rx_ring_index = (E1000_RDT + 1) % RX_RING_SIZE;
+
+  struct rx_desc *descriptor = &rx_ring[rx_ring_index];
+
+  if(descriptor->status != E1000_RXD_STAT_DD)
+    // needs to be some kind of "stop" here
+    // return -1 doesn't work
+  else {
+    rx_mbufs[rx_ring_index]->len = descriptor->length;
+    net_rx(rx_mbufs[rx_ring_index]);
+  }
   
   printf("test test receiving");
   release(&e1000_lock);  
