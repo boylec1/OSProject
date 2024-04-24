@@ -114,7 +114,7 @@ e1000_transmit(struct mbuf *m)
   if(descriptor->status != E1000_TXD_STAT_DD)
     return -1;
   else {
-    mbuffree(m);
+    mbuffree(tx_mbufs[tx_ring_index]);
   }
 
   // Filling in descriptor head and length
@@ -129,7 +129,7 @@ e1000_transmit(struct mbuf *m)
 
   // Updating ring position by adding one to E1000_TDT mod TX_RING_SIZE
   // Since regs[E1000_TDT] is actually the index position, we set that
-  regs[E1000_TDT] = (E1000_TDT + 1) % TX_RING_SIZE;
+  regs[E1000_TDT] = (regs[E1000_TDT] + 1) % TX_RING_SIZE;
 
   // Test print statement
   printf("test test transmit!");
@@ -152,18 +152,22 @@ e1000_recv(void)
   // add ring position
   // think index above, but for the receive descriptor (I think)
   // per lab spec, this is (RDT + 1) % RX_RING_SIZE
-  uint32 rx_ring_index = (E1000_RDT + 1) % RX_RING_SIZE;
+  uint32 rx_ring_index = (regs[E1000_RDT] + 1) % RX_RING_SIZE;
 
   struct rx_desc *descriptor = &rx_ring[rx_ring_index];
 
   if(descriptor->status != E1000_RXD_STAT_DD)
-    // needs to be some kind of "stop" here
-    // return -1 doesn't work
+    return;
   else {
     rx_mbufs[rx_ring_index]->len = descriptor->length;
     net_rx(rx_mbufs[rx_ring_index]);
   }
   
+  rx_mbufs[rx_ring_index] = mbufalloc(0);
+  descriptor->addr = (uint64)rx_mbufs[rx_ring_index]->head;
+  descriptor->status = 0;
+
+
   printf("test test receiving");
   release(&e1000_lock);  
 }
